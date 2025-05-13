@@ -1,0 +1,56 @@
+<div style="max-width: 400px; margin: auto; direction: rtl; font-family: sans-serif;">
+  <h3>🛌 خواب خود را وارد کنید:</h3>
+  <textarea id="dreamText" placeholder="مثلاً خواب دیدم که در آسمان پرواز می‌کردم..." rows="5" style="width: 100%; padding: 8px;"></textarea>
+  <button onclick="submitDream()" style="margin-top: 10px; padding: 8px 16px;">ارسال خواب</button>
+  <div id="result" style="margin-top: 20px; background: #f5f5f5; padding: 10px;"></div>
+</div>
+
+<script>
+  async function submitDream() {
+    const dream = document.getElementById("dreamText").value;
+    if (!dream.trim()) {
+      alert("لطفاً خواب خود را وارد کنید.");
+      return;
+    }
+
+    const apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pZm9td2V3bWdta2lzc3hvb2x0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcwNDk4OTYsImV4cCI6MjA2MjYyNTg5Nn0.2WacohibeqsuM2UOgbPkY1qswTA3nDBPqfIttBo0U-k";
+
+    // مرحله 1: درج خواب در جدول
+    const insertRes = await fetch("https://oifomwewmgmkissxoolt.supabase.co/rest/v1/dreams", {
+      method: "POST",
+      headers: {
+        "apikey": apiKey,
+        "Authorization": "Bearer " + apiKey,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify({ dream_text: dream })
+    });
+
+    const insertData = await insertRes.json();
+    if (!insertRes.ok || !insertData[0]?.id) {
+      document.getElementById("result").innerText = "❌ درج خواب با خطا مواجه شد.";
+      console.error("خطا در درج خواب:", insertData);
+      return;
+    }
+
+    // مرحله 2: درخواست به تابع تفسیر خواب
+    const fxRes = await fetch("https://oifomwewmgmkissxoolt.supabase.co/functions/v1/interpret-dream", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + apiKey
+      },
+      body: JSON.stringify({ dream })
+    });
+
+    const fxData = await fxRes.json();
+    if (!fxRes.ok) {
+      document.getElementById("result").innerText = "❌ تعبیر دریافت نشد.";
+      console.error("خطا در تابع تعبیر:", fxData);
+      return;
+    }
+
+    document.getElementById("result").innerText = "✅ تعبیر خواب: " + fxData.interpretation;
+  }
+</script>
